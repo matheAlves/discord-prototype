@@ -25,10 +25,45 @@ class DiscordPrototype {
 
     showLoginScreen() {
         this.cleanup(); // Clean up any existing state
+        this.resetUIToDefaults(); // Reset UI elements to default state
         document.getElementById('login-container').classList.remove('hidden');
         document.getElementById('discord-container').classList.add('hidden');
         if (!this.loginEventsBound) {
             this.bindLoginEvents();
+        }
+    }
+
+    resetUIToDefaults() {
+        // Reset UI elements to default server view state
+        const dmButton = document.getElementById('dm-button');
+        const serverIcon = document.querySelector('.server-icon:not(.dm-button)');
+        const serverChannels = document.getElementById('server-channels');
+        const dmList = document.getElementById('dm-list');
+
+        // Set server view as active
+        if (dmButton) dmButton.classList.remove('active');
+        if (serverIcon) serverIcon.classList.add('active');
+        if (serverChannels) serverChannels.classList.remove('hidden');
+        if (dmList) dmList.classList.add('hidden');
+
+        // Clear DM conversation selections
+        document.querySelectorAll('.dm-conversation').forEach(dm => {
+            dm.classList.remove('active');
+        });
+
+        // Reset channel header to default
+        const channelInfo = document.getElementById('channel-info');
+        if (channelInfo) {
+            channelInfo.innerHTML = `
+                <span class="channel-hash">#</span>
+                <span class="channel-name">geral</span>
+            `;
+        }
+
+        // Reset mobile navigation title
+        const mobileNavTitle = document.getElementById('mobile-nav-title');
+        if (mobileNavTitle) {
+            mobileNavTitle.textContent = '#geral';
         }
     }
 
@@ -454,6 +489,29 @@ class DiscordPrototype {
         this.sidebarOpen = false;
         sidebar.classList.remove('mobile-open');
         overlay.classList.remove('active');
+        
+        // On mobile, if in DM view and a conversation is pre-selected,
+        // show that conversation when sidebar closes
+        if (this.isMobile && this.currentView === 'dm' && this.currentDM) {
+            this.showPreselectedDMConversation();
+        }
+    }
+
+    // Method to show the pre-selected DM conversation
+    showPreselectedDMConversation() {
+        if (this.currentDM === 'saved') {
+            const userName = this.currentUser ? this.currentUser.name : 'Matheus';
+            this.updateChannelHeader('📥', userName);
+            this.loadSavedMessages();
+            this.updateMessageInputPlaceholder('Anote algo aqui');
+        } else if (this.currentDM) {
+            const dmName = document.querySelector(`[data-dm-id="${this.currentDM}"] .dm-name`).textContent;
+            this.updateChannelHeader('@', dmName);
+            this.loadDMMessages(this.currentDM);
+            this.updateMessageInputPlaceholder(`Mensagem @${dmName}`);
+        }
+        
+        this.updateUserInterface();
     }
 
     handleResize() {
@@ -1000,18 +1058,13 @@ class DiscordPrototype {
         serverChannels.classList.add('hidden');
         dmList.classList.remove('hidden');
 
-        // On mobile, don't auto-select a DM - show the DM list first
+        // On mobile, pre-select saved messages in background but keep DM list visible
         if (this.isMobile) {
-            // Clear any existing DM selection
-            this.currentDM = null;
-            document.querySelectorAll('.dm-conversation').forEach(dm => {
-                dm.classList.remove('active');
-            });
+            // Pre-select saved messages conversation in the background without closing sidebar
+            this.openDMConversationMobile('saved', false);
             
-            // Update header to show DM list
+            // Override the header and content to show DM list placeholder
             this.updateChannelHeader('💬', 'Mensagens Diretas');
-            
-            // Show a placeholder or empty state in the main area
             this.showDMListPlaceholder();
             
             // Keep sidebar open to show DM list
@@ -1083,7 +1136,39 @@ class DiscordPrototype {
         this.updateUserInterface();
         
         // Close mobile sidebar when a specific DM is selected
+        // Only close if this was triggered by user interaction (not automatic pre-selection)
         if (this.isMobile) {
+            this.closeMobileSidebar();
+        }
+    }
+
+    // New method for opening DM conversation on mobile without closing sidebar
+    openDMConversationMobile(dmId, closeSidebar = true) {
+        this.currentDM = dmId;
+        
+        // Update DM selection
+        document.querySelectorAll('.dm-conversation').forEach(dm => {
+            dm.classList.remove('active');
+        });
+        document.querySelector(`[data-dm-id="${dmId}"]`).classList.add('active');
+
+        // Update header based on DM
+        if (dmId === 'saved') {
+            const userName = this.currentUser ? this.currentUser.name : 'Matheus';
+            this.updateChannelHeader('📥', userName);
+            this.loadSavedMessages();
+            this.updateMessageInputPlaceholder('Anote algo aqui');
+        } else {
+            const dmName = document.querySelector(`[data-dm-id="${dmId}"] .dm-name`).textContent;
+            this.updateChannelHeader('@', dmName);
+            this.loadDMMessages(dmId);
+            this.updateMessageInputPlaceholder(`Mensagem @${dmName}`);
+        }
+        
+        this.updateUserInterface();
+        
+        // Only close mobile sidebar if explicitly requested
+        if (this.isMobile && closeSidebar) {
             this.closeMobileSidebar();
         }
     }
@@ -1246,10 +1331,20 @@ class DiscordPrototype {
 
     logout() {
         this.cleanup();
+        // Clear all localStorage data
         localStorage.removeItem('currentUser');
         localStorage.removeItem('bossMessageSent');
+        localStorage.removeItem('favoriteMessages');
+        localStorage.removeItem('dmMessages');
+        
+        // Reset all instance variables to their initial state
         this.currentUser = null;
         this.bossMessageSent = false;
+        this.favoriteMessages = [];
+        this.dmMessages = {};
+        this.currentView = 'server'; // Reset to default server view
+        this.currentDM = null; // Reset DM selection
+        
         this.showLoginScreen();
     }
 
