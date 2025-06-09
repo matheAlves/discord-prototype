@@ -287,7 +287,7 @@ class DiscordPrototype {
             </div>
             <div class="message-options">
                 <button class="message-option favorite-btn ${isFavorited ? 'favorited' : ''}" 
-                        title="${isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}"
+                        title="${isFavorited ? 'Remover das mensagens favoritas' : 'Adicionar às mensagens favoritas'}"
                         data-message-id="${message.id}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="${isFavorited ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
                         <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
@@ -333,7 +333,7 @@ class DiscordPrototype {
                 e.preventDefault();
                 const button = e.target.closest('.remove-favorite');
                 const messageId = parseInt(button.dataset.removeId);
-                this.removeFavorite(messageId);
+                this.showRemoveFavoriteConfirmation(messageId);
                 return;
             }
 
@@ -849,6 +849,73 @@ class DiscordPrototype {
             favoritesHeader.textContent = originalText;
             favoritesHeader.style.color = '';
         }, 1500);
+    }
+
+    showRemoveFavoriteConfirmation(messageId) {
+        // Find the message details
+        const message = this.favoriteMessages.find(fav => fav.id === messageId);
+        if (!message) return;
+
+        // Create confirmation dialog
+        const confirmationOverlay = document.createElement('div');
+        confirmationOverlay.className = 'confirmation-overlay';
+        
+        const confirmationDialog = document.createElement('div');
+        confirmationDialog.className = 'confirmation-dialog';
+        
+        confirmationDialog.innerHTML = `
+            <div class="confirmation-header">
+                <h3>Remover mensagem favorita</h3>
+            </div>
+            <div class="confirmation-content">
+                <p>Tem certeza de que deseja remover esta mensagem dos seus favoritos?</p>
+                <div class="message-preview">
+                    <div class="preview-author">${message.author}</div>
+                    <div class="preview-text">${message.content}</div>
+                </div>
+            </div>
+            <div class="confirmation-actions">
+                <button class="confirmation-btn cancel-btn" id="cancel-remove">Cancelar</button>
+                <button class="confirmation-btn confirm-btn" id="confirm-remove">Remover</button>
+            </div>
+        `;
+        
+        confirmationOverlay.appendChild(confirmationDialog);
+        document.body.appendChild(confirmationOverlay);
+        
+        // Add event listeners
+        const cancelBtn = confirmationDialog.querySelector('#cancel-remove');
+        const confirmBtn = confirmationDialog.querySelector('#confirm-remove');
+        
+        const removeDialog = () => {
+            document.body.removeChild(confirmationOverlay);
+        };
+        
+        cancelBtn.addEventListener('click', removeDialog);
+        
+        confirmBtn.addEventListener('click', () => {
+            this.removeFavorite(messageId);
+            removeDialog();
+        });
+        
+        // Close on overlay click
+        confirmationOverlay.addEventListener('click', (e) => {
+            if (e.target === confirmationOverlay) {
+                removeDialog();
+            }
+        });
+        
+        // Close on Escape key
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                removeDialog();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+        
+        // Focus on cancel button by default
+        setTimeout(() => cancelBtn.focus(), 100);
     }
 
     removeFavorite(messageId) {
