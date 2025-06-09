@@ -10,6 +10,7 @@ body {
     background-color: #36393f;
     color: #dcddde;
     height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile browsers */
     overflow: hidden;
 }
 
@@ -643,6 +644,59 @@ body {
     padding: 12px;
     margin-bottom: 12px;
     border-left: 4px solid #faa61a;
+    display: flex;
+    align-items: flex-start;
+    transition: all 0.2s ease;
+    cursor: grab;
+    position: relative;
+}
+
+.favorite-message:hover {
+    background-color: #3c4043;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.favorite-message.dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
+    cursor: grabbing;
+    z-index: 1000;
+}
+
+.favorite-message.drag-over {
+    background-color: #5865f2;
+    border-left-color: #5865f2;
+    transform: scale(1.02);
+}
+
+.drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-right: 12px;
+    margin-top: 2px;
+    color: #72767d;
+    cursor: grab;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.drag-handle:hover {
+    color: #dcddde;
+    background-color: #40444b;
+}
+
+.favorite-message:active .drag-handle {
+    cursor: grabbing;
+}
+
+.favorite-content {
+    flex: 1;
+    min-width: 0;
 }
 
 .favorite-message .message-header {
@@ -750,10 +804,15 @@ body {
     border: none;
     color: #b9bbbe;
     cursor: pointer;
-    padding: 4px;
-    border-radius: 3px;
+    padding: 6px;
+    border-radius: 4px;
     opacity: 0;
     transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
 }
 
 .user-bar:hover .logout-btn {
@@ -761,8 +820,9 @@ body {
 }
 
 .logout-btn:hover {
-    background-color: #f04747;
+    background-color: #F23F43;
     color: #ffffff;
+    transform: scale(1.1);
 }
 
 /* Scrollbar Styles */
@@ -814,6 +874,7 @@ body {
         flex-direction: column;
         position: relative;
         height: 100vh;
+        height: 100dvh; /* Dynamic viewport height for mobile browsers */
         overflow: hidden;
     }
     
@@ -868,6 +929,7 @@ body {
         left: -300px;
         width: 300px;
         height: calc(100vh - 56px);
+        height: calc(100dvh - 56px); /* Dynamic viewport height for mobile browsers */
         transition: left 0.3s ease;
         z-index: 999;
         box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
@@ -883,6 +945,7 @@ body {
         left: 0;
         width: 100%;
         height: calc(100vh - 56px);
+        height: calc(100dvh - 56px); /* Dynamic viewport height for mobile browsers */
         background-color: rgba(0, 0, 0, 0.5);
         z-index: 998;
         opacity: 0;
@@ -901,6 +964,7 @@ body {
         display: flex;
         flex-direction: column;
         height: calc(100vh - 56px);
+        height: calc(100dvh - 56px); /* Dynamic viewport height for mobile browsers */
         position: fixed;
         top: 56px;
         left: 0;
@@ -956,12 +1020,21 @@ body {
         margin-top: 8px;
         justify-content: flex-start;
         gap: 8px;
+        height: 32px;
+        display: flex;
+        align-items: center;
     }
     
     .message-option {
         padding: 6px;
         border-radius: 4px;
         background-color: #40444b;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
     }
     
     /* Message Input Mobile */
@@ -995,6 +1068,7 @@ body {
         left: -100%;
         width: 100%;
         height: calc(100vh - 56px);
+        height: calc(100dvh - 56px); /* Dynamic viewport height for mobile browsers */
         border-radius: 0;
         z-index: 1001;
         transition: left 0.3s ease;
@@ -1014,6 +1088,35 @@ body {
     .favorites-content {
         padding: 16px;
         height: calc(100% - 60px);
+    }
+    
+    /* Mobile Drag and Drop */
+    .favorite-message {
+        touch-action: none;
+        padding: 16px 12px;
+        margin-bottom: 16px;
+    }
+    
+    .drag-handle {
+        width: 24px;
+        height: 24px;
+        margin-right: 16px;
+        margin-top: 4px;
+    }
+    
+    .drag-handle svg {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .favorite-message:hover {
+        transform: none; /* Disable hover transform on mobile */
+    }
+    
+    .favorite-message.dragging {
+        transform: scale(1.05);
+        opacity: 0.8;
+        z-index: 1002;
     }
     
     /* User Bar Mobile */

@@ -13,6 +13,8 @@ class DiscordPrototype {
         this.mainEventsBound = false;
         this.isMobile = window.innerWidth <= 768;
         this.sidebarOpen = false;
+        this.draggedElement = null;
+        this.draggedIndex = null;
         
         if (this.currentUser) {
             this.showDiscordInterface();
@@ -633,21 +635,162 @@ class DiscordPrototype {
         }
 
         favoritesContent.innerHTML = '';
-        this.favoriteMessages.forEach(message => {
+        this.favoriteMessages.forEach((message, index) => {
             const favoriteDiv = document.createElement('div');
             favoriteDiv.className = 'favorite-message';
+            favoriteDiv.draggable = true;
+            favoriteDiv.dataset.messageId = message.id;
+            favoriteDiv.dataset.originalIndex = index;
             favoriteDiv.innerHTML = `
-                <div class="message-header">
-                    <span class="message-author">${message.author}</span>
-                    <span class="message-timestamp">${message.timestamp}</span>
-                    <button class="remove-favorite" data-remove-id="${message.id}">
-                        Remover
-                    </button>
+                <div class="drag-handle" title="Arrastar para reordenar">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="5" cy="6" r="2"></circle>
+                        <circle cx="5" cy="12" r="2"></circle>
+                        <circle cx="5" cy="18" r="2"></circle>
+                        <circle cx="12" cy="6" r="2"></circle>
+                        <circle cx="12" cy="12" r="2"></circle>
+                        <circle cx="12" cy="18" r="2"></circle>
+                        <circle cx="19" cy="6" r="2"></circle>
+                        <circle cx="19" cy="12" r="2"></circle>
+                        <circle cx="19" cy="18" r="2"></circle>
+                    </svg>
                 </div>
-                <div class="message-text">${message.content}</div>
+                <div class="favorite-content">
+                    <div class="message-header">
+                        <span class="message-author">${message.author}</span>
+                        <span class="message-timestamp">${message.timestamp}</span>
+                        <button class="remove-favorite" data-remove-id="${message.id}">
+                            Remover
+                        </button>
+                    </div>
+                    <div class="message-text">${message.content}</div>
+                </div>
             `;
             favoritesContent.appendChild(favoriteDiv);
         });
+
+        // Add drag and drop event listeners
+        this.bindDragDropEvents();
+    }
+
+    bindDragDropEvents() {
+        const favoriteMessages = document.querySelectorAll('.favorite-message[draggable="true"]');
+        
+        favoriteMessages.forEach(message => {
+            message.addEventListener('dragstart', this.handleDragStart.bind(this));
+            message.addEventListener('dragover', this.handleDragOver.bind(this));
+            message.addEventListener('drop', this.handleDrop.bind(this));
+            message.addEventListener('dragend', this.handleDragEnd.bind(this));
+            message.addEventListener('dragenter', this.handleDragEnter.bind(this));
+            message.addEventListener('dragleave', this.handleDragLeave.bind(this));
+        });
+    }
+
+    handleDragStart(e) {
+        this.draggedElement = e.currentTarget;
+        this.draggedIndex = parseInt(e.currentTarget.dataset.originalIndex);
+        
+        e.currentTarget.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', e.currentTarget.outerHTML);
+        
+        // Create a custom drag image that's slightly transparent
+        setTimeout(() => {
+            e.currentTarget.style.opacity = '0.5';
+        }, 0);
+    }
+
+    handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        
+        const afterElement = this.getDragAfterElement(e.currentTarget.parentNode, e.clientY);
+        const dragging = document.querySelector('.dragging');
+        
+        if (afterElement == null) {
+            e.currentTarget.parentNode.appendChild(dragging);
+        } else {
+            e.currentTarget.parentNode.insertBefore(dragging, afterElement);
+        }
+    }
+
+    handleDragEnter(e) {
+        e.preventDefault();
+        if (e.currentTarget !== this.draggedElement) {
+            e.currentTarget.classList.add('drag-over');
+        }
+    }
+
+    handleDragLeave(e) {
+        e.currentTarget.classList.remove('drag-over');
+    }
+
+    handleDrop(e) {
+        e.preventDefault();
+        e.currentTarget.classList.remove('drag-over');
+        
+        if (this.draggedElement && e.currentTarget !== this.draggedElement) {
+            const dropIndex = parseInt(e.currentTarget.dataset.originalIndex);
+            this.reorderFavorites(this.draggedIndex, dropIndex);
+        }
+    }
+
+    handleDragEnd(e) {
+        e.currentTarget.style.opacity = '';
+        e.currentTarget.classList.remove('dragging');
+        
+        // Remove drag-over class from all elements
+        document.querySelectorAll('.favorite-message').forEach(el => {
+            el.classList.remove('drag-over');
+        });
+        
+        this.draggedElement = null;
+        this.draggedIndex = null;
+    }
+
+    getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.favorite-message:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    reorderFavorites(fromIndex, toIndex) {
+        // Create a new array with the reordered items
+        const newFavorites = [...this.favoriteMessages];
+        const [movedItem] = newFavorites.splice(fromIndex, 1);
+        newFavorites.splice(toIndex, 0, movedItem);
+        
+        // Update the favorites array
+        this.favoriteMessages = newFavorites;
+        this.saveFavorites();
+        
+        // Refresh the favorites content with the new order
+        this.updateFavoritesContent();
+        
+        // Show feedback that the reorder was successful
+        this.showReorderFeedback();
+    }
+
+    showReorderFeedback() {
+        const favoritesHeader = document.querySelector('.favorites-header h3');
+        const originalText = favoritesHeader.textContent;
+        
+        favoritesHeader.textContent = '✓ Ordem atualizada';
+        favoritesHeader.style.color = '#43b581';
+        
+        setTimeout(() => {
+            favoritesHeader.textContent = originalText;
+            favoritesHeader.style.color = '';
+        }, 1500);
     }
 
     removeFavorite(messageId) {
