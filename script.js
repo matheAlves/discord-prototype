@@ -5,8 +5,55 @@ class DiscordPrototype {
         this.currentView = 'server'; // 'server' or 'dm'
         this.currentDM = null; // null for server, or dm id for DMs
         this.dmMessages = JSON.parse(localStorage.getItem('dmMessages')) || {};
+        this.currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+        
+        if (this.currentUser) {
+            this.showDiscordInterface();
+        } else {
+            this.showLoginScreen();
+        }
+    }
+
+    showLoginScreen() {
+        document.getElementById('login-container').classList.remove('hidden');
+        document.getElementById('discord-container').classList.add('hidden');
+        this.bindLoginEvents();
+    }
+
+    showDiscordInterface() {
+        document.getElementById('login-container').classList.add('hidden');
+        document.getElementById('discord-container').classList.remove('hidden');
         this.initializeDMMessages();
         this.init();
+    }
+
+    bindLoginEvents() {
+        const loginForm = document.getElementById('login-form');
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username-input').value.trim();
+            if (username) {
+                this.currentUser = {
+                    name: username,
+                    avatar: username.charAt(0).toUpperCase()
+                };
+                localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+                this.updateUserInterface();
+                this.showDiscordInterface();
+            }
+        });
+    }
+
+    updateUserInterface() {
+        // Update user bar
+        document.getElementById('user-name').textContent = this.currentUser.name;
+        document.getElementById('user-avatar').textContent = this.currentUser.avatar;
+        
+        // Update message placeholder
+        const messageInput = document.getElementById('message-input');
+        const currentChannel = this.currentView === 'server' ? 'geral' : 
+                              this.currentDM ? this.currentDM.replace('dm-', '') : 'geral';
+        messageInput.placeholder = `Mensagem ${this.currentView === 'server' ? '#' : '@'}${currentChannel}`;
     }
 
     init() {
@@ -14,6 +61,7 @@ class DiscordPrototype {
         this.generateDMList();
         this.bindEvents();
         this.updateFavoritesButton();
+        this.updateUserInterface();
     }
 
     generateSampleMessages() {
@@ -105,8 +153,8 @@ class DiscordPrototype {
         const dmConversations = [
             {
                 id: 'saved',
-                name: 'Matheus',
-                avatar: 'M',
+                name: this.currentUser ? this.currentUser.name : 'Matheus',
+                avatar: this.currentUser ? this.currentUser.avatar : 'M',
                 avatarColor: '#7289da',
                 status: 'Salvar mensagens para depois',
                 isSaved: true
@@ -288,6 +336,12 @@ class DiscordPrototype {
                 e.target.value = '';
             }
         });
+
+        // Logout functionality
+        const logoutBtn = document.getElementById('logout-btn');
+        logoutBtn.addEventListener('click', () => {
+            this.logout();
+        });
     }
 
     toggleFavorite(messageId, button) {
@@ -432,8 +486,8 @@ class DiscordPrototype {
         const newId = Date.now();
         const newMessage = {
             id: newId,
-            author: 'Você',
-            avatar: 'V',
+            author: this.currentUser ? this.currentUser.name : 'Você',
+            avatar: this.currentUser ? this.currentUser.avatar : 'V',
             avatarColor: '#5865f2',
             timestamp: new Date().toLocaleString('pt-BR', { 
                 month: 'numeric', 
@@ -616,6 +670,8 @@ class DiscordPrototype {
         if (!this.currentDM) {
             this.openDMConversation('saved');
         }
+        
+        this.updateUserInterface();
     }
 
     switchToServerView() {
@@ -642,6 +698,7 @@ class DiscordPrototype {
         this.updateChannelHeader('#', 'geral');
         this.generateSampleMessages();
         this.updateMessageInputPlaceholder('Mensagem #geral');
+        this.updateUserInterface();
     }
 
     openDMConversation(dmId) {
@@ -655,7 +712,8 @@ class DiscordPrototype {
 
         // Update header based on DM
         if (dmId === 'saved') {
-            this.updateChannelHeader('📥', 'Matheus');
+            const userName = this.currentUser ? this.currentUser.name : 'Matheus';
+            this.updateChannelHeader('📥', userName);
             this.loadSavedMessages();
             this.updateMessageInputPlaceholder('Anote algo aqui');
         } else {
@@ -664,6 +722,8 @@ class DiscordPrototype {
             this.loadDMMessages(dmId);
             this.updateMessageInputPlaceholder(`Mensagem @${dmName}`);
         }
+        
+        this.updateUserInterface();
     }
 
     updateChannelHeader(icon, name) {
@@ -716,6 +776,12 @@ class DiscordPrototype {
                 messagesContainer.appendChild(messageElement);
             });
         }
+    }
+
+    logout() {
+        localStorage.removeItem('currentUser');
+        this.currentUser = null;
+        this.showLoginScreen();
     }
 }
 

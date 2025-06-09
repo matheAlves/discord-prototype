@@ -7,7 +7,24 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="discord-container">
+    <!-- Login Screen -->
+    <div class="login-container" id="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>Bem-vindo ao Discord</h1>
+                <p>Que bom te ver de novo!</p>
+            </div>
+            <form class="login-form" id="login-form">
+                <div class="input-group">
+                    <label for="username-input">NOME DE USUÁRIO *</label>
+                    <input type="text" id="username-input" name="username" required placeholder="Digite seu nome de usuário">
+                </div>
+                <button type="submit" class="login-button">Entrar</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="discord-container hidden" id="discord-container">
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="server-list">
@@ -38,14 +55,21 @@
                 
                 <!-- User Bar -->
                 <div class="user-bar">
-                    <div class="user-avatar">M</div>
+                    <div class="user-avatar" id="user-avatar">M</div>
                     <div class="user-info">
-                        <div class="user-name">Matheus</div>
+                        <div class="user-name" id="user-name">Matheus</div>
                         <div class="user-status">
                             <div class="status-indicator online"></div>
                             <span class="status-text">Online</span>
                         </div>
                     </div>
+                    <button class="logout-btn" id="logout-btn" title="Logout">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m9 21 7-7-7-7"/>
+                            <path d="M20 12H8"/>
+                            <path d="M3 7v10a2 2 0 0 0 2 2h4"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>

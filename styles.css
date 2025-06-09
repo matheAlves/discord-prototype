@@ -13,6 +13,99 @@ body {
     overflow: hidden;
 }
 
+/* Login Screen Styles */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-card {
+    background-color: #36393f;
+    border-radius: 8px;
+    padding: 32px;
+    width: 480px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.login-header h1 {
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.login-header p {
+    color: #b9bbbe;
+    font-size: 16px;
+}
+
+.login-form .input-group {
+    margin-bottom: 20px;
+}
+
+.login-form label {
+    display: block;
+    color: #b9bbbe;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+}
+
+.login-form input {
+    width: 100%;
+    padding: 10px;
+    background-color: #40444b;
+    border: 1px solid #40444b;
+    border-radius: 3px;
+    color: #dcddde;
+    font-size: 16px;
+    transition: border-color 0.15s ease;
+}
+
+.login-form input:focus {
+    outline: none;
+    border-color: #7289da;
+}
+
+.login-form input::placeholder {
+    color: #72767d;
+}
+
+.login-button {
+    width: 100%;
+    padding: 12px;
+    background-color: #5865f2;
+    border: none;
+    border-radius: 3px;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.17s ease;
+}
+
+.login-button:hover {
+    background-color: #4752c4;
+}
+
+.login-button:active {
+    background-color: #3c45a5;
+}
+
+.hidden {
+    display: none !important;
+}
+
 .discord-container {
     display: flex;
     height: 100vh;
@@ -573,6 +666,26 @@ body {
 
 .status-indicator.offline {
     background-color: #747f8d;
+}
+
+.logout-btn {
+    background: none;
+    border: none;
+    color: #b9bbbe;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 3px;
+    opacity: 0;
+    transition: all 0.15s ease;
+}
+
+.user-bar:hover .logout-btn {
+    opacity: 1;
+}
+
+.logout-btn:hover {
+    background-color: #f04747;
+    color: #ffffff;
 }
 
 /* Scrollbar Styles */
