@@ -6,6 +6,11 @@ class DiscordPrototype {
         this.currentDM = null; // null for server, or dm id for DMs
         this.dmMessages = JSON.parse(localStorage.getItem('dmMessages')) || {};
         this.currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+        this.bossMessageSent = JSON.parse(localStorage.getItem('bossMessageSent')) || false;
+        this.typingTimeout = null;
+        this.bossMessageTimeout = null;
+        this.loginEventsBound = false;
+        this.mainEventsBound = false;
         
         if (this.currentUser) {
             this.showDiscordInterface();
@@ -15,9 +20,12 @@ class DiscordPrototype {
     }
 
     showLoginScreen() {
+        this.cleanup(); // Clean up any existing state
         document.getElementById('login-container').classList.remove('hidden');
         document.getElementById('discord-container').classList.add('hidden');
-        this.bindLoginEvents();
+        if (!this.loginEventsBound) {
+            this.bindLoginEvents();
+        }
     }
 
     showDiscordInterface() {
@@ -25,9 +33,17 @@ class DiscordPrototype {
         document.getElementById('discord-container').classList.remove('hidden');
         this.initializeDMMessages();
         this.init();
+        
+        // Show typing indicator and boss message after login (only if not sent before)
+        if (!this.bossMessageSent) {
+            this.typingTimeout = setTimeout(() => {
+                this.showBossTyping();
+            }, 2000);
+        }
     }
 
     bindLoginEvents() {
+        this.loginEventsBound = true;
         const loginForm = document.getElementById('login-form');
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -59,7 +75,9 @@ class DiscordPrototype {
     init() {
         this.generateSampleMessages();
         this.generateDMList();
-        this.bindEvents();
+        if (!this.mainEventsBound) {
+            this.bindEvents();
+        }
         this.updateFavoritesButton();
         this.updateUserInterface();
     }
@@ -257,14 +275,16 @@ class DiscordPrototype {
     }
 
     bindEvents() {
-        // Global click handler for all click events
+        this.mainEventsBound = true;
+        
+        // Single global click handler for all click events
         document.addEventListener('click', (e) => {
             // Handle favorite button clicks
             if (e.target.closest('.favorite-btn')) {
                 const button = e.target.closest('.favorite-btn');
                 const messageId = parseInt(button.dataset.messageId);
                 this.toggleFavorite(messageId, button);
-                return; // Stop processing other click events
+                return;
             }
             
             // Handle remove favorite button clicks
@@ -274,7 +294,21 @@ class DiscordPrototype {
                 const button = e.target.closest('.remove-favorite');
                 const messageId = parseInt(button.dataset.removeId);
                 this.removeFavorite(messageId);
-                return; // Stop processing other click events
+                return;
+            }
+
+            // Handle DM conversation clicks
+            if (e.target.closest('.dm-conversation')) {
+                const dmElement = e.target.closest('.dm-conversation');
+                const dmId = dmElement.dataset.dmId;
+                this.openDMConversation(dmId);
+                return;
+            }
+
+            // Handle server icon clicks (but not DM button)
+            if (e.target.closest('.server-icon:not(.dm-button)')) {
+                this.switchToServerView();
+                return;
             }
 
             // Handle favorites panel close (click outside)
@@ -287,29 +321,10 @@ class DiscordPrototype {
             }
         });
 
-        // DM button toggle
+        // DM button toggle (specific button, not using delegation)
         const dmButton = document.getElementById('dm-button');
-        const serverChannels = document.getElementById('server-channels');
-        const dmListElement = document.getElementById('dm-list');
-
         dmButton.addEventListener('click', () => {
             this.switchToDMView();
-        });
-
-        // DM conversation clicks
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.dm-conversation')) {
-                const dmElement = e.target.closest('.dm-conversation');
-                const dmId = dmElement.dataset.dmId;
-                this.openDMConversation(dmId);
-            }
-        });
-
-        // Server icon click
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.server-icon:not(.dm-button)')) {
-                this.switchToServerView();
-            }
         });
 
         // Favorites panel toggle
@@ -781,6 +796,108 @@ class DiscordPrototype {
     logout() {
         localStorage.removeItem('currentUser');
         this.currentUser = null;
+        this.showLoginScreen();
+    }
+
+    showBossTyping() {
+        // Only show if we're in the main server channel and boss message hasn't been sent
+        if (this.currentView === 'server' && !this.bossMessageSent) {
+            this.showTypingIndicator();
+            
+            // After 5 seconds, remove typing indicator and add boss message
+            this.bossMessageTimeout = setTimeout(() => {
+                this.hideTypingIndicator();
+                this.addBossMessage();
+            }, 5000);
+        }
+    }
+
+    showTypingIndicator() {
+        // Remove any existing typing indicator first
+        this.hideTypingIndicator();
+        
+        const messagesContainer = document.getElementById('messages-container');
+        const typingIndicator = document.createElement('div');
+        typingIndicator.className = 'typing-indicator';
+        typingIndicator.id = 'typing-indicator';
+        
+        typingIndicator.innerHTML = `
+            <div class="typing-content">
+                <div class="typing-avatar" style="background-color: #e74c3c;">JB</div>
+                <div class="typing-text">
+                    <strong>John Boss</strong> está digitando...
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        messagesContainer.appendChild(typingIndicator);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    hideTypingIndicator() {
+        const typingIndicator = document.getElementById('typing-indicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+    }
+
+    addBossMessage() {
+        // Double-check to prevent duplicate messages
+        if (this.bossMessageSent) {
+            return;
+        }
+        
+        const bossMessage = {
+            id: Date.now(),
+            author: 'John Boss',
+            avatar: 'JB',
+            avatarColor: '#e74c3c',
+            timestamp: new Date().toLocaleString('pt-BR', { 
+                month: 'numeric', 
+                day: 'numeric', 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: false 
+            }),
+            content: `Oi ${this.currentUser.name}! Preciso que você revise o relatório de vendas do último trimestre até o final da semana.\n\nTambém temos uma reunião importante na segunda-feira às 14h para discutir as metas do próximo mês. Por favor, prepare uma apresentação com os KPIs atuais.\n\nObrigado! 📊`
+        };
+
+        const messagesContainer = document.getElementById('messages-container');
+        const messageElement = this.createMessageElement(bossMessage);
+        messagesContainer.appendChild(messageElement);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        
+        // Set the flag to prevent future duplicates
+        this.bossMessageSent = true;
+        localStorage.setItem('bossMessageSent', JSON.stringify(this.bossMessageSent));
+    }
+
+    cleanup() {
+        // Clear any existing timeouts
+        if (this.typingTimeout) {
+            clearTimeout(this.typingTimeout);
+            this.typingTimeout = null;
+        }
+        if (this.bossMessageTimeout) {
+            clearTimeout(this.bossMessageTimeout);
+            this.bossMessageTimeout = null;
+        }
+        
+        // Remove typing indicator if it exists
+        this.hideTypingIndicator();
+    }
+
+    logout() {
+        this.cleanup();
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('bossMessageSent');
+        this.currentUser = null;
+        this.bossMessageSent = false;
         this.showLoginScreen();
     }
 }
