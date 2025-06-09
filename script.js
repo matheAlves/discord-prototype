@@ -1398,19 +1398,27 @@ class DiscordPrototype {
 
     logout() {
         this.cleanup();
-        // Clear all localStorage data
+        
+        // Preserve saved messages before clearing data
+        const savedMessages = this.dmMessages['saved'] || [];
+        
+        // Clear localStorage data except saved messages
         localStorage.removeItem('currentUser');
         localStorage.removeItem('bossMessageSent');
         localStorage.removeItem('favoriteMessages');
-        localStorage.removeItem('dmMessages');
         
         // Reset all instance variables to their initial state
         this.currentUser = null;
         this.bossMessageSent = false;
         this.favoriteMessages = [];
-        this.dmMessages = {};
+        this.dmMessages = {
+            'saved': savedMessages  // Preserve only saved messages
+        };
         this.currentView = 'server'; // Reset to default server view
         this.currentDM = null; // Reset DM selection
+        
+        // Update localStorage with preserved saved messages
+        this.saveDMMessages();
         
         this.showLoginScreen();
     }
