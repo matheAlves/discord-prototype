@@ -1125,6 +1125,10 @@ body {
         border-top: 1px solid #40444b;
     }
     
+    .user-bar .logout-btn {
+        opacity: 1; /* Always visible on mobile */
+    }
+    
     .user-avatar {
         width: 32px;
         height: 32px;
