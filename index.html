@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protótipo Discord - Mensagens Favoritas</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="discord-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="server-list">
+                <button class="server-icon dm-button" id="dm-button" title="Mensagens Diretas">
+                    <svg width="24" height="24" viewBox="0 0 27 21" fill="currentColor">
+                        <path d="M22.8715 1.75039C21.1237 0.932672 19.2549 0.338365 17.3012 0C17.0612 0.433801 16.7809 1.01726 16.5876 1.48143C14.5107 1.16909 12.4529 1.16909 10.4143 1.48143C10.221 1.01726 9.93432 0.433801 9.69222 0C7.73636 0.338365 5.86544 0.934841 4.1177 1.75472C0.592472 7.0818 -0.363161 12.2766 0.114656 17.3976C2.45277 19.1436 4.71868 20.2043 6.94637 20.8984C7.49639 20.1414 7.98695 19.3367 8.40955 18.4886C7.6047 18.1828 6.83382 17.8054 6.10541 17.3672C6.29866 17.2241 6.48767 17.0744 6.6703 16.9204C11.1129 18.9983 15.9399 18.9983 20.3295 16.9204C20.5142 17.0744 20.7032 17.2241 20.8944 17.3672C20.1638 17.8075 19.3908 18.1849 18.586 18.4908C19.0086 19.3367 19.497 20.1435 20.0492 20.9005C22.279 20.2064 24.547 19.1458 26.8851 17.3976C27.4458 11.461 25.9274 6.31397 22.8715 1.75039ZM9.01479 14.2482C7.68115 14.2482 6.58748 13.0032 6.58748 11.487C6.58748 9.97091 7.65779 8.72374 9.01479 8.72374C10.3718 8.72374 11.4655 9.96875 11.4421 11.487C11.4442 13.0032 10.3718 14.2482 9.01479 14.2482ZM17.985 14.2482C16.6514 14.2482 15.5577 13.0032 15.5577 11.487C15.5577 9.97091 16.628 8.72374 17.985 8.72374C19.342 8.72374 20.4357 9.96875 20.4123 11.487C20.4123 13.0032 19.342 14.2482 17.985 14.2482Z"/>
+                    </svg>
+                </button>
+                <div class="server-icon active">D</div>
+            </div>
+            <div class="sidebar-content">
+                <div class="channel-list" id="server-channels">
+                    <div class="server-name">Protótipo Discord</div>
+                    <div class="channel-category">
+                        <span>CANAIS DE TEXTO</span>
+                    </div>
+                    <div class="channel active">
+                        <span class="channel-hash">#</span>
+                        <span class="channel-name">geral</span>
+                    </div>
+                </div>
+                <div class="dm-list hidden" id="dm-list">
+                    <div class="dm-header">
+                        <span>Mensagens Diretas</span>
+                    </div>
+                    <!-- DM conversations will be populated here -->
+                </div>
+                
+                <!-- User Bar -->
+                <div class="user-bar">
+                    <div class="user-avatar">M</div>
+                    <div class="user-info">
+                        <div class="user-name">Matheus</div>
+                        <div class="user-status">
+                            <div class="status-indicator online"></div>
+                            <span class="status-text">Online</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="main-content">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <div class="channel-info" id="channel-info">
+                    <span class="channel-hash">#</span>
+                    <span class="channel-name">geral</span>
+                </div>
+                <div class="header-icons">
+                    <button class="icon-button" id="favorites-btn" title="Mensagens Favoritas">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                        </svg>
+                    </button>
+                    <button class="icon-button search-btn" title="Pesquisar">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Messages Container -->
+            <div class="messages-container" id="messages-container">
+                <!-- Sample messages will be generated here -->
+            </div>
+
+            <!-- Message Input -->
+            <div class="message-input-container">
+                <div class="message-input">
+                    <input type="text" placeholder="Mensagem #geral" id="message-input">
+                </div>
+            </div>
+        </div>
+
+        <!-- Favorites Panel -->
+        <div class="favorites-panel" id="favorites-panel">
+            <div class="favorites-header">
+                <h3>Mensagens Favoritas</h3>
+                <button class="close-btn" id="close-favorites">×</button>
+            </div>
+            <div class="favorites-content" id="favorites-content">
+                <div class="empty-favorites">
+                    <p>Nenhuma mensagem favorita ainda. Clique na estrela de uma mensagem para vê-la aqui!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

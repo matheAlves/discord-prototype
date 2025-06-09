@@ -1,0 +1,27 @@
+# VS Code settings
+.vscode/
+!.vscode/tasks.json
+
+# Node modules (if you add any)
+node_modules/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+
+# Temporary files
+*.tmp
+*.temp
