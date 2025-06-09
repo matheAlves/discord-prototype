@@ -11,6 +11,8 @@ class DiscordPrototype {
         this.bossMessageTimeout = null;
         this.loginEventsBound = false;
         this.mainEventsBound = false;
+        this.isMobile = window.innerWidth <= 768;
+        this.sidebarOpen = false;
         
         if (this.currentUser) {
             this.showDiscordInterface();
@@ -80,6 +82,7 @@ class DiscordPrototype {
         }
         this.updateFavoritesButton();
         this.updateUserInterface();
+        this.updateMobileNavigation();
     }
 
     generateSampleMessages() {
@@ -357,6 +360,174 @@ class DiscordPrototype {
         logoutBtn.addEventListener('click', () => {
             this.logout();
         });
+
+        // Mobile navigation
+        this.bindMobileEvents();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            this.handleResize();
+        });
+    }
+
+    bindMobileEvents() {
+        const mobileNavToggle = document.getElementById('mobile-nav-toggle');
+        const mobileOverlay = document.getElementById('mobile-overlay');
+        const mobileFavoritesBtn = document.getElementById('mobile-favorites-btn');
+        const sidebar = document.getElementById('sidebar');
+
+        // Mobile navigation toggle
+        mobileNavToggle.addEventListener('click', () => {
+            this.toggleMobileSidebar();
+        });
+
+        // Mobile overlay click to close sidebar
+        mobileOverlay.addEventListener('click', () => {
+            this.closeMobileSidebar();
+        });
+
+        // Mobile favorites button
+        mobileFavoritesBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const favoritesPanel = document.getElementById('favorites-panel');
+            const favoritesBtn = document.getElementById('favorites-btn');
+            
+            favoritesPanel.classList.toggle('open');
+            favoritesBtn.classList.toggle('active');
+            this.updateFavoritesContent();
+            
+            // Close mobile sidebar when opening favorites
+            this.closeMobileSidebar();
+        });
+
+        // Close mobile sidebar when clicking on DM conversations
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.dm-conversation') && this.isMobile) {
+                this.closeMobileSidebar();
+            }
+        });
+
+        // Handle mobile favorites panel close (click outside)
+        document.addEventListener('click', (e) => {
+            if (this.isMobile) {
+                const favoritesPanel = document.getElementById('favorites-panel');
+                const favoritesBtn = document.getElementById('favorites-btn');
+                const mobileFavoritesBtn = document.getElementById('mobile-favorites-btn');
+                const closeFavoritesBtn = document.getElementById('close-favorites');
+                
+                // Check if click is outside favorites panel and not on trigger buttons
+                if (!favoritesPanel.contains(e.target) && 
+                    !favoritesBtn.contains(e.target) && 
+                    !mobileFavoritesBtn.contains(e.target) &&
+                    !closeFavoritesBtn.contains(e.target) &&
+                    favoritesPanel.classList.contains('open')) {
+                    favoritesPanel.classList.remove('open');
+                    favoritesBtn.classList.remove('active');
+                }
+            }
+        });
+    }
+
+    toggleMobileSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobile-overlay');
+        
+        this.sidebarOpen = !this.sidebarOpen;
+        
+        if (this.sidebarOpen) {
+            sidebar.classList.add('mobile-open');
+            overlay.classList.add('active');
+        } else {
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+        }
+    }
+
+    closeMobileSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobile-overlay');
+        
+        this.sidebarOpen = false;
+        sidebar.classList.remove('mobile-open');
+        overlay.classList.remove('active');
+    }
+
+    handleResize() {
+        const wasMobile = this.isMobile;
+        this.isMobile = window.innerWidth <= 768;
+        
+        // If switching from mobile to desktop, close mobile sidebar
+        if (wasMobile && !this.isMobile) {
+            this.closeMobileSidebar();
+        }
+        
+        // Update mobile navigation visibility
+        this.updateMobileNavigation();
+    }
+
+    updateMobileNavigation() {
+        const mobileNav = document.getElementById('mobile-nav');
+        
+        if (this.isMobile) {
+            mobileNav.style.display = 'flex';
+            this.updateMobileNavTitle();
+            this.updateMobileFavoritesButton();
+        } else {
+            mobileNav.style.display = 'none';
+        }
+    }
+
+    updateMobileNavTitle() {
+        const mobileNavTitle = document.getElementById('mobile-nav-title');
+        
+        if (this.currentView === 'server') {
+            mobileNavTitle.textContent = '#geral';
+        } else if (this.currentView === 'dm' && !this.currentDM) {
+            // When in DM view but no specific conversation selected
+            mobileNavTitle.textContent = '💬 Mensagens Diretas';
+        } else if (this.currentDM === 'saved') {
+            const userName = this.currentUser ? this.currentUser.name : 'Matheus';
+            mobileNavTitle.textContent = `📥 ${userName}`;
+        } else if (this.currentDM) {
+            const dmName = document.querySelector(`[data-dm-id="${this.currentDM}"] .dm-name`)?.textContent || 'DM';
+            mobileNavTitle.textContent = `@ ${dmName}`;
+        }
+    }
+
+    updateMobileFavoritesButton() {
+        const mobileFavoritesBtn = document.getElementById('mobile-favorites-btn');
+        
+        // Remove existing badge
+        const existingBadge = mobileFavoritesBtn.querySelector('.favorites-badge');
+        if (existingBadge) {
+            existingBadge.remove();
+        }
+
+        // Add badge if there are favorites
+        if (this.favoriteMessages.length > 0) {
+            mobileFavoritesBtn.style.position = 'relative';
+            const badge = document.createElement('span');
+            badge.className = 'favorites-badge';
+            badge.textContent = this.favoriteMessages.length;
+            badge.style.cssText = `
+                position: absolute;
+                top: -2px;
+                right: -2px;
+                background: #ed4245;
+                color: white;
+                border-radius: 50%;
+                width: 16px;
+                height: 16px;
+                font-size: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+            `;
+            mobileFavoritesBtn.appendChild(badge);
+        }
     }
 
     toggleFavorite(messageId, button) {
@@ -441,6 +612,11 @@ class DiscordPrototype {
             if (badge) {
                 badge.remove();
             }
+        }
+        
+        // Update mobile favorites button too
+        if (this.isMobile) {
+            this.updateMobileFavoritesButton();
         }
     }
 
@@ -681,9 +857,27 @@ class DiscordPrototype {
         serverChannels.classList.add('hidden');
         dmList.classList.remove('hidden');
 
-        // If no DM is selected, open saved messages by default
-        if (!this.currentDM) {
-            this.openDMConversation('saved');
+        // On mobile, don't auto-select a DM - show the DM list first
+        if (this.isMobile) {
+            // Clear any existing DM selection
+            this.currentDM = null;
+            document.querySelectorAll('.dm-conversation').forEach(dm => {
+                dm.classList.remove('active');
+            });
+            
+            // Update header to show DM list
+            this.updateChannelHeader('💬', 'Mensagens Diretas');
+            
+            // Show a placeholder or empty state in the main area
+            this.showDMListPlaceholder();
+            
+            // Keep sidebar open to show DM list
+            // Don't close mobile sidebar here
+        } else {
+            // On desktop, auto-select saved messages if no DM is selected
+            if (!this.currentDM) {
+                this.openDMConversation('saved');
+            }
         }
         
         this.updateUserInterface();
@@ -714,6 +908,11 @@ class DiscordPrototype {
         this.generateSampleMessages();
         this.updateMessageInputPlaceholder('Mensagem #geral');
         this.updateUserInterface();
+        
+        // Close mobile sidebar if open
+        if (this.isMobile) {
+            this.closeMobileSidebar();
+        }
     }
 
     openDMConversation(dmId) {
@@ -739,6 +938,11 @@ class DiscordPrototype {
         }
         
         this.updateUserInterface();
+        
+        // Close mobile sidebar when a specific DM is selected
+        if (this.isMobile) {
+            this.closeMobileSidebar();
+        }
     }
 
     updateChannelHeader(icon, name) {
@@ -747,6 +951,11 @@ class DiscordPrototype {
             <span class="channel-hash">${icon}</span>
             <span class="channel-name">${name}</span>
         `;
+        
+        // Update mobile navigation title
+        if (this.isMobile) {
+            this.updateMobileNavTitle();
+        }
     }
 
     updateMessageInputPlaceholder(placeholder) {
@@ -899,6 +1108,22 @@ class DiscordPrototype {
         this.currentUser = null;
         this.bossMessageSent = false;
         this.showLoginScreen();
+    }
+
+    showDMListPlaceholder() {
+        const messagesContainer = document.getElementById('messages-container');
+        messagesContainer.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #72767d;">
+                <h3>💬 Mensagens Diretas</h3>
+                <p>Selecione uma conversa na lista lateral para começar a conversar.</p>
+                <p style="margin-top: 20px; font-size: 14px;">Você pode:</p>
+                <ul style="list-style: none; padding: 0; margin-top: 10px;">
+                    <li>📥 Acessar suas mensagens salvas</li>
+                    <li>💬 Conversar com membros da equipe</li>
+                    <li>⭐ Favoritar mensagens importantes</li>
+                </ul>
+            </div>
+        `;
     }
 }
 
