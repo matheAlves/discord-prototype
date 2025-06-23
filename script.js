@@ -568,6 +568,7 @@ class DiscordPrototype {
         // Add badge if there are favorites
         if (this.favoriteMessages.length > 0) {
             mobileFavoritesBtn.style.position = 'relative';
+            mobileFavoritesBtn.classList.add('has-favorites');
             const badge = document.createElement('span');
             badge.className = 'favorites-badge';
             badge.textContent = this.favoriteMessages.length;
@@ -587,6 +588,8 @@ class DiscordPrototype {
                 font-weight: bold;
             `;
             mobileFavoritesBtn.appendChild(badge);
+        } else {
+            mobileFavoritesBtn.classList.remove('has-favorites');
         }
     }
 
@@ -603,11 +606,14 @@ class DiscordPrototype {
             button.title = 'Adicionar aos favoritos';
             button.querySelector('svg').setAttribute('fill', 'none');
         } else {
-            // Add to favorites
+            // Add to favorites - trigger flying star animation
             this.favoriteMessages.push(messageData);
             button.classList.add('favorited');
             button.title = 'Remover dos favoritos';
             button.querySelector('svg').setAttribute('fill', 'currentColor');
+            
+            // Trigger the flying star animation
+            this.animateFlyingStar(button);
         }
 
         this.saveFavorites();
@@ -640,6 +646,7 @@ class DiscordPrototype {
         const favoritesBtn = document.getElementById('favorites-btn');
         if (this.favoriteMessages.length > 0) {
             favoritesBtn.style.position = 'relative';
+            favoritesBtn.classList.add('has-favorites');
             
             // Remove existing badge
             const existingBadge = favoritesBtn.querySelector('.favorites-badge');
@@ -668,6 +675,7 @@ class DiscordPrototype {
             `;
             favoritesBtn.appendChild(badge);
         } else {
+            favoritesBtn.classList.remove('has-favorites');
             const badge = favoritesBtn.querySelector('.favorites-badge');
             if (badge) {
                 badge.remove();
@@ -849,6 +857,81 @@ class DiscordPrototype {
             favoritesHeader.textContent = originalText;
             favoritesHeader.style.color = '';
         }, 1500);
+    }
+
+    animateFlyingStar(sourceButton) {
+        console.log('Flying star animation started'); // Debug log
+        
+        // Get the source button position
+        const sourceRect = sourceButton.getBoundingClientRect();
+        console.log('Source rect:', sourceRect); // Debug log
+        
+        // Get the target favorites button (check both desktop and mobile)
+        let targetButton = document.getElementById('favorites-btn');
+        if (this.isMobile || !targetButton || getComputedStyle(targetButton).display === 'none') {
+            targetButton = document.getElementById('mobile-favorites-btn');
+        }
+        
+        if (!targetButton) {
+            console.log('No target button found'); // Debug log
+            return;
+        }
+        
+        const targetRect = targetButton.getBoundingClientRect();
+        console.log('Target rect:', targetRect); // Debug log
+        
+        // Create the flying star element
+        const flyingStar = document.createElement('div');
+        flyingStar.className = 'flying-star';
+        flyingStar.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+            </svg>
+        `;
+        
+        // Calculate start position (center of source button)
+        const startX = sourceRect.left + sourceRect.width / 2 - 8;
+        const startY = sourceRect.top + sourceRect.height / 2 - 8;
+        
+        // Calculate end position (center of target button)
+        const endX = targetRect.left + targetRect.width / 2 - 8;
+        const endY = targetRect.top + targetRect.height / 2 - 8;
+        
+        // Position the flying star at the source button location
+        flyingStar.style.position = 'fixed';
+        flyingStar.style.left = startX + 'px';
+        flyingStar.style.top = startY + 'px';
+        flyingStar.style.zIndex = '9999';
+        flyingStar.style.pointerEvents = 'none';
+        
+        // Add to body
+        document.body.appendChild(flyingStar);
+        console.log('Flying star element added to body'); // Debug log
+        
+        // Force a reflow to ensure the element is rendered
+        flyingStar.offsetHeight;
+        
+        // Trigger the animation to the target
+        setTimeout(() => {
+            flyingStar.style.transition = 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            flyingStar.style.left = endX + 'px';
+            flyingStar.style.top = endY + 'px';
+            flyingStar.style.transform = 'scale(0.8)';
+            flyingStar.style.opacity = '0.9';
+            console.log('Animation triggered'); // Debug log
+        }, 10);
+        
+        // Add pulse animation to the target button
+        targetButton.classList.add('favorites-button-pulse');
+        
+        // Clean up after animation
+        setTimeout(() => {
+            if (flyingStar.parentNode) {
+                flyingStar.parentNode.removeChild(flyingStar);
+                console.log('Flying star cleaned up'); // Debug log
+            }
+            targetButton.classList.remove('favorites-button-pulse');
+        }, 650);
     }
 
     showRemoveFavoriteConfirmation(messageId) {
