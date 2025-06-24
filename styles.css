@@ -564,6 +564,9 @@ body {
     background-color: #40444b;
     border-radius: 8px;
     padding: 0 16px;
+    display: flex;
+    align-items: center;
+    position: relative;
 }
 
 .message-input input {
@@ -572,12 +575,44 @@ body {
     border: none;
     color: #dcddde;
     padding: 12px 0;
+    padding-right: 40px; /* Space for send button */
     outline: none;
     font-size: 16px;
 }
 
 .message-input input::placeholder {
     color: #72767d;
+}
+
+.send-button {
+    position: absolute;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    color: #b5bac1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0.6;
+}
+
+.send-button:hover {
+    color: #dcddde;
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+.send-button:active {
+    transform: scale(0.95);
+}
+
+.message-input input:focus + .send-button,
+.message-input input:not(:placeholder-shown) + .send-button {
+    opacity: 1;
 }
 
 /* Favorites Panel */
@@ -1172,11 +1207,15 @@ body {
         background-color: #40444b;
         border-radius: 8px;
         padding: 0 16px;
+        display: flex;
+        align-items: center;
+        position: relative;
     }
     
     .message-input input {
         font-size: 16px; /* Prevents zoom on iOS */
         padding: 12px 0;
+        padding-right: 40px; /* Space for send button */
         background: none;
         border: none;
         color: #dcddde;

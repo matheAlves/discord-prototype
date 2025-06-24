@@ -385,11 +385,24 @@ class DiscordPrototype {
 
         // Message input functionality
         const messageInput = document.getElementById('message-input');
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && e.target.value.trim()) {
-                this.addNewMessage(e.target.value.trim());
-                e.target.value = '';
+        const sendButton = document.getElementById('send-button');
+        
+        const sendMessage = () => {
+            const message = messageInput.value.trim();
+            if (message) {
+                this.addNewMessage(message);
+                messageInput.value = '';
             }
+        };
+        
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        sendButton.addEventListener('click', () => {
+            sendMessage();
         });
 
         // Logout functionality
