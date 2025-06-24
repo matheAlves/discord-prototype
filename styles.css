@@ -692,20 +692,21 @@ body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.favorite-message.dragging {
+/* Legacy drag styles - enhanced above */
+.favorite-message.dragging-legacy {
     opacity: 0.5;
     transform: rotate(2deg);
     cursor: grabbing;
     z-index: 1000;
 }
 
-.favorite-message.drag-over {
+.favorite-message.drag-over-legacy {
     background-color: #5865f2;
     border-left-color: #5865f2;
     transform: scale(1.02);
 }
 
-.drag-handle {
+.drag-handle-legacy {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -720,12 +721,12 @@ body {
     flex-shrink: 0;
 }
 
-.drag-handle:hover {
+.drag-handle-legacy:hover {
     color: #dcddde;
     background-color: #40444b;
 }
 
-.favorite-message:active .drag-handle {
+.favorite-message:active .drag-handle-legacy {
     cursor: grabbing;
 }
 
@@ -1252,7 +1253,7 @@ body {
         height: calc(100% - 60px);
     }
     
-    /* Mobile Drag and Drop */
+    /* Mobile Drag and Drop Enhanced */
     .favorite-message {
         touch-action: none;
         padding: 16px 12px;
@@ -1279,6 +1280,46 @@ body {
         transform: scale(1.05);
         opacity: 0.8;
         z-index: 1002;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    .favorite-message.drag-over {
+        transform: scale(1.02);
+        background-color: rgba(88, 101, 242, 0.2);
+    }
+    
+    /* Mobile Tooltip Styles */
+    .drag-tooltip {
+        margin: 12px 16px 16px 16px;
+        font-size: 13px;
+    }
+    
+    .tooltip-content {
+        padding: 12px 14px;
+    }
+    
+    .tooltip-icon {
+        margin-right: 10px;
+    }
+    
+    .tooltip-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .tooltip-text {
+        font-size: 13px;
+        line-height: 1.4;
+    }
+    
+    .tooltip-close {
+        padding: 6px;
+        margin-left: 8px;
+    }
+    
+    .tooltip-close svg {
+        width: 14px;
+        height: 14px;
     }
     
     /* Confirmation Dialog Mobile */
@@ -1604,4 +1645,196 @@ body {
     background-color: #c73636;
 }
 
-/* Mobile-specific flying star adjustments */
+/* Enhanced Drag and Drop Styles */
+.drag-active {
+    cursor: grabbing !important;
+}
+
+.drag-active * {
+    cursor: grabbing !important;
+}
+
+.favorite-message.drop-zone {
+    background-color: rgba(88, 101, 242, 0.08);
+    border: 2px dashed rgba(88, 101, 242, 0.3);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.favorite-message.drop-zone:hover {
+    background-color: rgba(88, 101, 242, 0.15);
+    border-color: rgba(88, 101, 242, 0.5);
+}
+
+.favorite-message.drop-zone::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 40%, rgba(88, 101, 242, 0.1) 50%, transparent 60%);
+    border-radius: 6px;
+    opacity: 0;
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+}
+
+.favorite-message.dragging {
+    opacity: 0.6;
+    transform: rotate(3deg) scale(1.05);
+    cursor: grabbing;
+    z-index: 1000;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    background-color: rgba(88, 101, 242, 0.1);
+}
+
+.favorite-message.drag-over {
+    background-color: #5865f2 !important;
+    border-left-color: #5865f2 !important;
+    transform: scale(1.02) translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(88, 101, 242, 0.4) !important;
+    transition: all 0.2s ease !important;
+}
+
+.favorite-message.drag-over .message-text,
+.favorite-message.drag-over .message-author,
+.favorite-message.drag-over .message-timestamp {
+    color: #ffffff !important;
+}
+
+.favorite-message.drag-over .drag-handle {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Drag Tooltip Styles */
+.drag-tooltip {
+    background: linear-gradient(135deg, #5865f2 0%, #4752c4 100%);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    padding: 0;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);
+}
+
+.drag-tooltip.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.drag-tooltip.hide {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.tooltip-content {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    position: relative;
+}
+
+.tooltip-icon {
+    color: #ffffff;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.tooltip-text {
+    color: #ffffff;
+    font-size: 14px;
+    flex: 1;
+}
+
+.tooltip-text strong {
+    font-weight: 600;
+}
+
+.tooltip-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    margin-left: 12px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.tooltip-close:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Enhanced Drag Handle */
+.drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-right: 12px;
+    margin-top: 2px;
+    color: #72767d;
+    cursor: grab;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.drag-handle:hover {
+    color: #dcddde;
+    background-color: #40444b;
+    transform: scale(1.1);
+}
+
+.drag-handle:active {
+    transform: scale(0.95);
+}
+
+.favorite-message:hover .drag-handle {
+    color: #dcddde;
+}
+
+.favorite-message:active .drag-handle {
+    cursor: grabbing;
+}
+
+/* Reorder Animation */
+@keyframes reorderPulse {
+    0% {
+        background-color: rgba(88, 101, 242, 0.1);
+        transform: scale(1);
+    }
+    50% {
+        background-color: rgba(88, 101, 242, 0.2);
+        transform: scale(1.02);
+    }
+    100% {
+        background-color: transparent;
+        transform: scale(1);
+    }
+}
+
+/* Scale animation for feedback header */
+@keyframes feedbackScale {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}

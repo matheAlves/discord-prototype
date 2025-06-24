@@ -15,6 +15,8 @@ class DiscordPrototype {
         this.sidebarOpen = false;
         this.draggedElement = null;
         this.draggedIndex = null;
+        this.reorderFeedbackTimeout = null;
+        this.favoritesTooltipShown = JSON.parse(localStorage.getItem('favoritesTooltipShown')) || false;
         
         if (this.currentUser) {
             this.showDiscordInterface();
@@ -376,6 +378,13 @@ class DiscordPrototype {
             favoritesPanel.classList.toggle('open');
             favoritesBtn.classList.toggle('active');
             this.updateFavoritesContent();
+            
+            // Show tooltip on first open if there are favorites and tooltip hasn't been shown
+            if (favoritesPanel.classList.contains('open') && 
+                !this.favoritesTooltipShown && 
+                this.favoriteMessages.length > 1) {
+                this.showDragTooltip();
+            }
         });
 
         closeFavoritesBtn.addEventListener('click', () => {
@@ -447,6 +456,13 @@ class DiscordPrototype {
             favoritesPanel.classList.toggle('open');
             favoritesBtn.classList.toggle('active');
             this.updateFavoritesContent();
+            
+            // Show tooltip on first open if there are favorites and tooltip hasn't been shown
+            if (favoritesPanel.classList.contains('open') && 
+                !this.favoritesTooltipShown && 
+                this.favoriteMessages.length > 1) {
+                this.showDragTooltip();
+            }
             
             // Close mobile sidebar when opening favorites
             this.closeMobileSidebar();
@@ -773,9 +789,18 @@ class DiscordPrototype {
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/html', e.currentTarget.outerHTML);
         
+        // Enhanced visual feedback
+        document.body.classList.add('drag-active');
+        
+        // Add drop zones indicators
+        document.querySelectorAll('.favorite-message:not(.dragging)').forEach(msg => {
+            msg.classList.add('drop-zone');
+        });
+        
         // Create a custom drag image that's slightly transparent
         setTimeout(() => {
-            e.currentTarget.style.opacity = '0.5';
+            e.currentTarget.style.opacity = '0.6';
+            e.currentTarget.style.transform = 'rotate(3deg) scale(1.05)';
         }, 0);
     }
 
@@ -783,25 +808,49 @@ class DiscordPrototype {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
         
-        const afterElement = this.getDragAfterElement(e.currentTarget.parentNode, e.clientY);
-        const dragging = document.querySelector('.dragging');
-        
-        if (afterElement == null) {
-            e.currentTarget.parentNode.appendChild(dragging);
-        } else {
-            e.currentTarget.parentNode.insertBefore(dragging, afterElement);
+        // Only add drag-over effect if not already present and not the dragged element
+        if (e.currentTarget !== this.draggedElement && !e.currentTarget.classList.contains('drag-over')) {
+            // Remove drag-over from all other elements first
+            document.querySelectorAll('.favorite-message.drag-over').forEach(el => {
+                if (el !== e.currentTarget) {
+                    el.classList.remove('drag-over');
+                    el.style.transform = '';
+                }
+            });
+            
+            // Add to current target
+            e.currentTarget.classList.add('drag-over');
+            e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
         }
     }
 
     handleDragEnter(e) {
         e.preventDefault();
         if (e.currentTarget !== this.draggedElement) {
+            // Remove from others and add to current
+            document.querySelectorAll('.favorite-message.drag-over').forEach(el => {
+                if (el !== e.currentTarget) {
+                    el.classList.remove('drag-over');
+                    el.style.transform = '';
+                }
+            });
+            
             e.currentTarget.classList.add('drag-over');
+            e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+            e.currentTarget.style.transition = 'all 0.2s ease';
         }
     }
 
     handleDragLeave(e) {
-        e.currentTarget.classList.remove('drag-over');
+        // Only remove if we're actually leaving the element (not entering a child)
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX;
+        const y = e.clientY;
+        
+        if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+            e.currentTarget.classList.remove('drag-over');
+            e.currentTarget.style.transform = '';
+        }
     }
 
     handleDrop(e) {
@@ -816,11 +865,18 @@ class DiscordPrototype {
 
     handleDragEnd(e) {
         e.currentTarget.style.opacity = '';
+        e.currentTarget.style.transform = '';
+        e.currentTarget.style.transition = '';
         e.currentTarget.classList.remove('dragging');
         
-        // Remove drag-over class from all elements
+        // Remove global drag state
+        document.body.classList.remove('drag-active');
+        
+        // Remove drag-over class and drop zone indicators from all elements
         document.querySelectorAll('.favorite-message').forEach(el => {
-            el.classList.remove('drag-over');
+            el.classList.remove('drag-over', 'drop-zone');
+            el.style.transform = '';
+            el.style.transition = '';
         });
         
         this.draggedElement = null;
@@ -855,21 +911,48 @@ class DiscordPrototype {
         // Refresh the favorites content with the new order
         this.updateFavoritesContent();
         
+        // Add subtle animation to show order change
+        setTimeout(() => {
+            const favoriteMessages = document.querySelectorAll('.favorite-message');
+            favoriteMessages.forEach((msg, index) => {
+                msg.style.animation = 'reorderPulse 0.5s ease';
+                setTimeout(() => {
+                    msg.style.animation = '';
+                }, 500);
+            });
+        }, 100);
+        
         // Show feedback that the reorder was successful
         this.showReorderFeedback();
     }
 
     showReorderFeedback() {
         const favoritesHeader = document.querySelector('.favorites-header h3');
-        const originalText = favoritesHeader.textContent;
+        if (!favoritesHeader) return;
         
-        favoritesHeader.textContent = '✓ Ordem atualizada';
+        const originalText = 'Mensagens Favoritas'; // Use consistent text
+        
+        // Clear any existing timeout to prevent conflicts
+        if (this.reorderFeedbackTimeout) {
+            clearTimeout(this.reorderFeedbackTimeout);
+        }
+        
+        // Add visual feedback with animation
+        favoritesHeader.textContent = '✓ Ordem atualizada!';
         favoritesHeader.style.color = '#43b581';
+        favoritesHeader.style.transform = 'scale(1.05)';
+        favoritesHeader.style.transition = 'all 0.2s ease';
         
-        setTimeout(() => {
-            favoritesHeader.textContent = originalText;
-            favoritesHeader.style.color = '';
-        }, 1500);
+        // Reset after animation
+        this.reorderFeedbackTimeout = setTimeout(() => {
+            favoritesHeader.style.transform = 'scale(1)';
+            setTimeout(() => {
+                favoritesHeader.textContent = originalText;
+                favoritesHeader.style.color = '';
+                favoritesHeader.style.transform = '';
+                favoritesHeader.style.transition = '';
+            }, 200);
+        }, 1300);
     }
 
     animateFlyingStar(sourceButton) {
@@ -1533,6 +1616,66 @@ class DiscordPrototype {
                 </ul>
             </div>
         `;
+    }
+
+    showDragTooltip() {
+        // Only show if there are multiple favorites to reorder
+        if (this.favoriteMessages.length < 2) return;
+        
+        // Create tooltip element
+        const tooltip = document.createElement('div');
+        tooltip.className = 'drag-tooltip';
+        tooltip.innerHTML = `
+            <div class="tooltip-content">
+                <div class="tooltip-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M13 6v5h5v-5h-5zm-2 0H6v5h5V6zm2 7v5h5v-5h-5zm-2 0H6v5h5v-5z"/>
+                    </svg>
+                </div>
+                <div class="tooltip-text">
+                    <strong>Dica:</strong> Você pode reordenar as mensagens clicando e arrastando nelas
+                </div>
+                <button class="tooltip-close" onclick="this.parentElement.parentElement.remove()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        // Position tooltip
+        const favoritesContent = document.getElementById('favorites-content');
+        if (favoritesContent) {
+            favoritesContent.insertBefore(tooltip, favoritesContent.firstChild);
+            
+            // Add animation
+            setTimeout(() => {
+                tooltip.classList.add('show');
+            }, 100);
+            
+            // Auto-hide after 8 seconds
+            setTimeout(() => {
+                if (tooltip.parentNode) {
+                    tooltip.classList.add('hide');
+                    setTimeout(() => {
+                        if (tooltip.parentNode) {
+                            tooltip.remove();
+                        }
+                    }, 300);
+                }
+            }, 8000);
+            
+            // Mark as shown
+            this.favoritesTooltipShown = true;
+            localStorage.setItem('favoritesTooltipShown', 'true');
+        }
+    }
+
+    // Add method to reset tooltip for testing/demo purposes
+    resetTooltip() {
+        this.favoritesTooltipShown = false;
+        localStorage.removeItem('favoritesTooltipShown');
     }
 }
 
